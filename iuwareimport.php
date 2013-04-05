@@ -9,5 +9,6 @@ Author URI: http://www.flowcom.se/
 */
 
 include 'includes/github.php';
+include 'includes/import.php';
 
 
