@@ -8,3 +8,6 @@ Version: 1.0
 Author URI: http://www.flowcom.se/
 */
 
+include 'includes/github.php';
+
+
