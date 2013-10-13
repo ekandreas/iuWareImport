@@ -16,6 +16,10 @@ class Mentor_iuWare_Import_Tools{
 
         add_action( 'wp', array( &$this, 'prefix_setup_schedule' ) );
 
+        if ( !wp_next_scheduled( 'cron_iuware_import' ) ) {
+            wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
+        }
+
     }
 
     function addCronMinutes($array) {
