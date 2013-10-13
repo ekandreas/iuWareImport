@@ -393,7 +393,7 @@ class Mentor_iuWare_Import_Tools{
         $iuware_latest = (int)$time;
         update_option( 'iuware_latest', $iuware_latest );
 
-        if( $iuware_latest < 55 ){
+        if( $iuware_latest < 50 ){
             $iuware_batch++;
         }
         else{
