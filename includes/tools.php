@@ -354,12 +354,10 @@ class Mentor_iuWare_Import_Tools{
 
             if( !$post_is_saved ){
                 if( strtotime( $date ) < strtotime( '-1 week' ) ){
-                    $ssoid++;
                     update_option( 'iuware_ssoid', $ssoid );
                 }
             }
             else{
-                $ssoid++;
                 update_option( 'iuware_ssoid', $ssoid );
             }
 
@@ -368,6 +366,9 @@ class Mentor_iuWare_Import_Tools{
             update_option( 'iuware_latest', $time );
 
         }
+
+        $ssoid++;
+        update_option( 'iuware_ssoid', $ssoid );
 
         $time_end = $this->microtime_float();
         $time = $time_end - $time_start;
