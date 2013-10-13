@@ -26,7 +26,7 @@ class Mentor_iuWare_Import_Tools{
         return $array;
     }
 
-    function prefix_setp_schedule(){
+    function prefix_setup_schedule(){
         if ( !wp_next_scheduled( 'cron_iuware_import' ) ) {
             wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
         }
