@@ -9,7 +9,6 @@ class Mentor_iuWare_Import_Tools{
 
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
 		add_action( 'wp_ajax_iuware_import', array( &$this, 'iuware_import' ) );
-		add_action( 'wp_ajax_iuware_delete', array( &$this, 'iuware_delete' ) );
 
 	}
 
@@ -21,94 +20,98 @@ class Mentor_iuWare_Import_Tools{
 
 	function tools(){
 
+        $saved = "";
+
+        if( isset( $_REQUEST['save'] ) && wp_verify_nonce( $_REQUEST['nonce'], 'iuware_settings' ) ){
+
+            update_option( 'iuware_running', isset($_REQUEST['running']) ? 1 : 0 );
+            update_option( 'iuware_ssoid', (int)$_REQUEST['ssoid'] );
+            update_option( 'iuware_update', isset($_REQUEST['update']) ? 1 : 0 );
+            $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".";
+
+        }
+
+        $iuware_running = (int)get_option( 'iuware_running' );
+        $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
+        $iuware_update = (int)get_option( 'iuware_update' );
+
 		?>
 
 		<div class="wrap">
 
 			<div id="icon-tools" class="icon32"><br></div><h2>iuWare Import</h2>
-			<p>Här kan vi skriva lite instruktioner...</p>
+			<p>iuWare Import hämtar innehållet från detaljsidor i iuWare-sajterna hos Mentoronline.</p>
+            <p>Importen startar från det SSOID du sätter. Varje tidning får sin egen kategori i denna WordPressinstallation.</p>
+            <p>Importen går på cronjobb men detta gränssnitt kan också köras manuellt.</p>
 
-			<table class="widefat" cellspacing="0">
-				<tbody>
-				<tr>
-					<td>Paper as Filter:</td>
-					<td>
-						<input id="filter" name="filter" type="text" value="papernet.se" />
-					</td>
-				</tr>
-				<tr class="alternate">
-					<td>User ID:</td>
-					<td>
-						<?php
+            <?php
 
-						$args = array(
-							'orderby'      => 'email',
-							'order'        => 'ASC',
-							'fields' => 'all_with_meta'
-						);
-						$users = get_users( $args );
+            if( !empty( $saved ) ){
+                echo '<div class="updated">' . $saved . '</div>';
+            }
 
-						?>
-						<select id="user" name="user">
-							<?php
-							foreach( $users as $user ){
-								echo '<option value="' . $user->ID . '">' . $user->user_email . '</option>';
-							}
-							?>
-						</select>
+            ?>
 
-					</td>
-				</tr>
-				<tr>
-					<td>Start:</td>
-					<td>
-						<input id="start" name="start" type="text" value="0" />
-					</td>
-				</tr>
-				<tr>
-					<td>Filter Date >:</td>
-					<td>
-						<input id="filter_date" name="filter_date" type="text" value="<?php echo date('Y-m-d'); ?>" />
-					</td>
-				</tr>
-				</tbody>
-			</table>
+            <form method="post">
 
-			<br/>
+                <table class="widefat" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Fältnamn</th>
+                            <th>Värde</th>
+                            <th>Beskrivning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>Körs redan?</td>
+                        <td>
+                            <input name="running" type="checkbox"<?php checked( 1, $iuware_running ); ?> />
+                        </td>
+                        <td>
+                            (Om importen redan körs kommer den att stoppas om denna kryssas ur och sparas)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>SSOID Start</td>
+                        <td>
+                            <input name="ssoid" type="text" value="<?php echo $iuware_ssoid; ?>" />
+                        </td>
+                        <td>
+                            (denna uppdateras efter hand och kan återställas)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Uppdatera</td>
+                        <td>
+                            <input name="update" type="checkbox"<?php checked( 1, $iuware_update ); ?> />
+                        </td>
+                        <td>
+                            (Om importen ska skriva över befintlig importerad post)
+                        </td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th>Fältnamn</th>
+                        <th>Värde</th>
+                        <th>Beskrivning</th>
+                    </tr>
+                    </tfoot>
+                </table>
 
-			<input type="submit" id="import" name="import" value="Start" class="button-primary" />
-			&nbsp;<input type="button" id="delete" name="delete" value="Delete all posts with SSOID" class="button-secondary" />
+                <br/>
 
-			<br/><br/>
+                <input type="submit" name="save" value="Spara" class="button-primary" />
+                <input type="hidden" name="nonce" value="<?php echo wp_create_nonce( 'iuware_settings' ); ?>" />
 
-			<div id="form"></div>
-			<div id="executor"></div>
+            </form>
 
-			<input type="hidden" name="quit" id="quit" value="0" />
+            <br/><br/>
+
+            <a href="<?php echo admin_url('admin-ajax.php'); ?>?action=iuware_import" target="_blank">Kör import i annat fönster</a>
 
 		</div>
-
-		<script language="javascript">
-
-			jQuery(document).ready(function($){
-
-				$('#import').click(function(){
-
-					$('#form').load( '<?php echo admin_url( 'admin-ajax.php' ); ?>?action=iuware_import&form=1&start=' + $('#start').val() + '&filter=' + $('#filter').val() + '&filter_date=' + $('#filter_date').val() );
-					return false;
-
-				});
-
-				$('#delete').click(function(){
-
-					$('#form').load( '<?php echo admin_url( 'admin-ajax.php' ); ?>?action=iuware_delete&form=1' );
-					return false;
-
-				});
-
-			});
-
-		</script>
 
 		<?php
 
@@ -116,197 +119,162 @@ class Mentor_iuWare_Import_Tools{
 
 	function iuware_import(){
 
-		include WP_PLUGIN_DIR . '/iuWareImport/vendor/autoload.php';
+        $iuware_running = (int)get_option( 'iuware_running' );
+        $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
+        $iuware_update = (int)get_option( 'iuware_update' );
 
-		include WP_PLUGIN_DIR . '/iuWareImport/Sherlock/Sherlock.php';
-		\Sherlock\Sherlock::registerAutoloader();
+        if( $iuware_running ) return;
 
-		$start = 0;
-		if ( isset( $_REQUEST['start'] ) && ((int)$_REQUEST['start']) >0 ) $start = (int)$_REQUEST['start'];
+        update_option( 'iuware_running', 1 );
 
-		$filter_date = date('Y-m-d');
-		if ( isset( $_REQUEST['filter_date'] ) ) $filter_date = $_REQUEST['filter_date'];
+        // first create root term...
+        $term_iuWare = term_exists('iuWare', 'category');
+        $term_iuWare = $term_iuWare['term_id'];
+        if ( !$term_iuWare ) {
+            wp_insert_term(
+                'iuWare',
+                'category');
+            $term_iuWare = term_exists('iuWare', 'category');
+            $term_iuWare = $term_iuWare['term_id'];
+        }
 
-		$stop = $start+10;
-		if ( isset( $_REQUEST['stop'] ) && ((int)$_REQUEST['stop']) >0 ) $stop = (int)$_REQUEST['stop'];
+        $step = 50;
+        $pageid = 3868;
+        $url = "http://www.plastnet.se/iuware.aspx";
 
-		$filter = isset( $_REQUEST['filter'] ) ? esc_attr( $_REQUEST['filter'] ) : 'papernet.se';
-		$import_index = 'mo-iuware';
-		$user = isset( $_REQUEST['user'] ) ? esc_attr( $_REQUEST['user'] ) : '1';
+        for( $ssoid = $iuware_ssoid; $ssoid<$iuware_ssoid+$step; $ssoid++ ){
 
-		$sherlock = new \Sherlock\Sherlock();
-		$sherlock->addNode("elastic.flowcom.se", "80");
+            if( !(int)get_option( 'iuware_running' ) ) break;
 
-		if( $stop>0 && $start >= $stop ) {
-			echo '<script language="javascript">';
-			echo 'jQuery("#ajaxloader").hide();';
-			echo 'jQuery("#stopper").hide();';
-			echo 'jQuery("#quit").val("1");';
-			echo '</script>';
-		}
+            $date = "1999-01-01";
+            $post_is_saved = false;
 
-		if( isset( $_REQUEST['form'] ) ){
-			?>
-			<textarea id="log" name="log" rows="15" cols="100">
-			</textarea>
-			<br/>
-			<input type="submit" name="stopper" id="stopper" value="Stop" class="button-primary" />
-			&nbsp;
-			<img id="ajaxloader" src="<?php echo WP_PLUGIN_URL; ?>/iuWareImport/img/ajax-loader.gif" />
-			<?php
-			$code = "jQuery('#executor').load( '" . admin_url( 'admin-ajax.php' ) . "?action=iuware_import&user='+jQuery('#user').val()+'&filter='+jQuery('#filter').val() + '&start=' +jQuery('#start').val() + '&filter_date=' +jQuery('#filter_date').val() );";
-			echo '<script language="javascript">';
-			echo 'setTimeout( "' . $code . '", 100 );';
-			echo 'jQuery("#stopper").click(function(){';
-			echo 'jQuery("#ajaxloader").hide();';
-			echo 'jQuery("#quit").val("1");';
-			echo 'return false;';
-			echo '});';
-			echo '</script>';
+            $the_body = wp_remote_retrieve_body( wp_remote_get( $url . "?pageid=" . $pageid . "&ssoid=" . $ssoid ) );
 
-		}
-		else{
+            $matches = array();
+            preg_match_all('/<div\s*class="container_centermain_article">(.*)<div>/s', $the_body, $matches);
 
-			$result = "";
+            if( isset( $matches[1][0] ) ){
 
-			$index_name = "mo-iuware";
+                $content = $matches[1][0];
 
-			//Build a new search request
-			$request = $sherlock->search();
+                preg_match_all('/<p\s*class="paper">\((.*)\)<\/p>/', $content, $matches);
+                $paper = isset($matches[1][0]) ? $this->decode( $matches[1][0] ) : '';
 
-			$json='
-			{
-			"from" : ' . $start . ',
-			"size" : 10,
+                preg_match_all('/<h1>(.*)<\/h1>/', $content, $matches);
+                $headline = $this->decode( $matches[1][0] );
 
-			"sort" : [
-							{
-								"date" : {
-									"order" : "asc"
-								}
-							}
-							],
+                preg_match_all('/<p\s*class="date">(.*)<\/p>/', $content, $matches);
+                $date = $this->decode( $matches[1][0] );
+                $date = date( 'Y-m-d', strtotime( $date ) );
 
-			"query": {
-					"filtered": {
-						"query": {
-							"term": { "paper" : "' . $filter . '" }
-						},
-						"filter": {
-							"range": {
-								"date": { "gt": "' . $filter_date . 'T00:00:00" }
-							}
-						}
-					}
-				}
+                preg_match_all('/<p\s*class="preamble">(.*)<\/p>/', $content, $matches);
+                $preamble = $this->decode( $matches[1][0] );
 
-			}
-			';
+                preg_match_all('/<p\s*class="body">(.*)<\/p>/', $content, $matches);
+                $body = $this->decode( $matches[1][0] );
 
-			error_log($json);
+                if( $headline == $preamble && $preamble == $body ){
+                    echo "<p>" . $ssoid . ". No article</p>";
+                }
+                else if( $date < '1999-02-01' ){
+                    echo "<p>" . $ssoid . ". No date in article</p>";
+                }
+                else if( empty( $headline ) ){
+                    echo "<p>" . $ssoid . ". No headline in article</p>";
+                }
+                else{
 
-			$rawTermQuery = \Sherlock\Sherlock::queryBuilder()->Raw($json);
+                    $post_is_saved = true;
 
-			//$termQuery = \Sherlock\Sherlock::queryBuilder()->Term()->field("paper")
-			//		->term($filter);
+                    $term_paper = term_exists( $paper, 'category', $term_iuWare );
+                    $term_paper = $term_paper['term_id'];
+                    if ( !$term_paper ) {
+                        wp_insert_term(
+                            $paper,
+                            'category',
+                            array(
+                                'parent' => $term_iuWare
+                            )
+                        );
+                        $term_paper = term_exists( $paper, 'category' );
+                        $term_paper = $term_paper['term_id'];
+                    }
 
-			//Set the index, type and from/to parameters of the request.
-			$request->index($index_name)
-					->type("article")
-					->query($rawTermQuery);
+                    $args = array(
+                        'meta_key'        => 'SSOID',
+                        'meta_value'      => $ssoid,
+                    );
+                    $posts = get_posts( $args );
 
-			//Finally, set the query and execute
-			$response = $request->execute();
+                    if( sizeof( $posts ) ){
 
-			$updated = 0;
-			$inserted = 0;
-			$date = '';
+                        if( !$iuware_update ){
+                            echo "<p>" . $ssoid . ". No update allowed, " . $headline . "</p>";
+                        }
+                        else{
+                            $post = array(
+                                'ID' => $posts[0]->ID,
+                                'post_content'   => $body,
+                                'post_date'      => $date,
+                                'post_excerpt'   => '',
+                                'post_status'    => 'publish',
+                                'post_title'     => $headline,
+                                'post_type'      => 'post',
+                                'post_author'	=> 1
+                            );
 
-			if( $response->total ){
-				foreach( $response->hits as $hit ){
-					if( $hit['source']['paper']==$filter && !( empty( $hit['source']['body']) && empty( $hit['source']['preamble']) ) ){
+                            $post_id = wp_update_post( $post );
 
-						$args = array(
-							'meta_key'        => 'ssoid',
-							'meta_value'      => $hit['source']['ssoid'],
-						);
-						$posts = get_posts( $args );
+                            update_post_meta( $post_id, 'IUWARE_SOURCE', $paper );
+                            update_post_meta( $post_id, 'SSOID', $ssoid );
 
-						if( sizeof( $posts ) ){
+                            wp_set_post_terms( $post_id, array($term_iuWare, $term_paper), 'category' );
 
-							$post = array(
-								'ID' => $posts[0]->ID,
-								'post_content'   => $hit['source']['body'],
-								'post_date'      => $hit['source']['date'],
-								'post_excerpt'   => $hit['source']['preamble'],
-								'post_status'    => 'publish',
-								'post_title'     => $hit['source']['headline'],
-								'post_type'      => 'post',
-								'post_author'	=> $user
-							);
+                            echo "<p>" . $ssoid . ". Updated, " . $headline . "</p>";
 
-							$post_id = wp_update_post( $post );
+                        }
 
-							update_post_meta( $post_id, 'iuware_source', $hit['source']['paper'] );
+                    }
+                    else{
+                        $post = array(
+                            'post_content'   => $body,
+                            'post_date'      => $date,
+                            'post_excerpt'   => '',
+                            'post_status'    => 'publish',
+                            'post_title'     => $headline,
+                            'post_type'      => 'post',
+                            'post_author'	=> 1
+                        );
 
-							$updated++;
-							//$result .= $hit['source']['headline'] . ", updated.\n";
+                        $post_id = wp_insert_post( $post );
 
-							$date = $hit['source']['date'];
+                        update_post_meta( $post_id, 'IUWARE_SOURCE', $paper );
+                        update_post_meta( $post_id, 'SSOID', $ssoid );
 
-						}
-						else{
+                        wp_set_post_terms( $post_id, array($term_iuWare, $term_paper), 'category' );
 
-							$post = array(
-								'post_content'   => $hit['source']['body'],
-								'post_date'      => $hit['source']['date'],
-								'post_excerpt'   => $hit['source']['preamble'],
-								'post_status'    => 'publish',
-								'post_title'     => $hit['source']['headline'],
-								'post_type'      => 'post',
-								'post_author'	=> $user
-							);
+                        echo "<p>" . $ssoid . ". Inserted, " . $headline . "</p>";
 
-							$post_id = wp_insert_post( $post );
+                    }
 
-							update_post_meta( $post_id, 'ssoid', $hit['source']['ssoid'] );
-							update_post_meta( $post_id, 'iuware_source', $hit['source']['paper'] );
+                }
+            }
 
-							$inserted++;
-							//$result .= $hit['source']['headline'] . ", imported.\n";
+            if( !$post_is_saved ){
+                if( strtotime( $date ) < strtotime( '-1 week' ) ){
+                    update_option( 'iuware_ssoid', $ssoid );
+                }
+            }
+            else{
+                update_option( 'iuware_ssoid', $ssoid );
+            }
 
-							$date = $hit['source']['date'];
+        }
 
-						}
-					}
-				}
-			}
-			else{
-				echo '<script language="javascript">';
-				echo 'jQuery("#ajaxloader").hide();';
-				echo 'jQuery("#stopper").hide();';
-				echo 'jQuery("#quit").val("1");';
-				echo '</script>';
-				return;
-			}
+        update_option( 'iuware_running', 0 );
 
-			$result .= $start . '-' . $stop . ': ' . $inserted . ' is inserted and ' . $updated . ' is updated. [' . $date . ']';
-
-			$start += 10;
-			$stop += 10;
-
-			$result = str_replace( '"', "'", $result );
-
-			$code = "jQuery('#executor').load( '" . admin_url( 'admin-ajax.php' ) . "?action=iuware_import&start=" . $start . "&user=" . $user . "&filter=" . $filter . "&stop=" . $stop . "&filter_date=" . $filter_date . "' );";
-			echo '<script language="javascript">';
-			echo 'jQuery("#log").val( "' . $result . '\n" + jQuery("#log").val() );';
-			echo 'if ( jQuery("#log").val().length>3000 ) jQuery("#log").val( jQuery("#log").val().substring(0,2999) );';
-			echo 'if( jQuery("#quit").val() == "0" ) setTimeout( "' . $code . '", 100 );';
-			echo '</script>';
-
-		}
-
-		exit;
+        wp_die( 'iuWare Import har kört klart.', 'iuWare Import' );
 
 	}
 
@@ -326,72 +294,6 @@ class Mentor_iuWare_Import_Tools{
 		return $result;
 
 	}
-
-	function iuware_delete(){
-
-		if( isset( $_REQUEST['form'] ) ){
-			?>
-			<textarea id="log" name="log" rows="15" cols="100">
-			</textarea>
-			<br/>
-			<input type="submit" name="stopper" id="stopper" value="Stop" class="button-primary" />
-			&nbsp;
-			<img id="ajaxloader" src="<?php echo WP_PLUGIN_URL; ?>/iuWareImport/img/ajax-loader.gif" />
-			<?php
-			$code = "jQuery('#executor').load( '" . admin_url( 'admin-ajax.php' ) . "?action=iuware_delete' );";
-			echo '<script language="javascript">';
-			echo 'setTimeout( "' . $code . '", 100 );';
-			echo 'jQuery("#stopper").click(function(){';
-			echo 'jQuery("#ajaxloader").hide();';
-			echo 'jQuery("#quit").val("1");';
-			echo 'return false;';
-			echo '});';
-			echo '</script>';
-
-		}
-		else{
-
-			$result = "";
-
-			$no_deleted = 0;
-
-			$args = array(
-				'meta_key' => 'ssoid',
-				'numberposts' => 100,
-				'meta_query' => array( 'meta_key' => 'ssoid', 'meta_value' => '0', 'meta_compare' => '>' )
-			);
-			$posts = get_posts( $args );
-
-			foreach( $posts as $post ){
-				$del = wp_delete_post( $post->ID, true );
-				if( $del ) $no_deleted++;
-			}
-
-			$result .= $no_deleted . ' is deleted.';
-
-			if( !$no_deleted ){
-				echo '<script language="javascript">';
-				echo 'jQuery("#ajaxloader").hide();';
-				echo 'jQuery("#stopper").hide();';
-				echo 'jQuery("#quit").val("1");';
-				echo '</script>';
-			}
-
-			$result = str_replace( '"', "'", $result );
-
-			$code = "jQuery('#executor').load( '" . admin_url( 'admin-ajax.php' ) . "?action=iuware_delete' );";
-			echo '<script language="javascript">';
-			echo 'jQuery("#log").val( "' . $result . '\n" + jQuery("#log").val() );';
-			echo 'if ( jQuery("#log").val().length>3000 ) jQuery("#log").val( jQuery("#log").val().substring(0,2999) );';
-			echo 'if( jQuery("#quit").val() == "0" ) setTimeout( "' . $code . '", 100 );';
-			echo '</script>';
-
-		}
-
-		exit;
-
-	}
-
 
 
 }

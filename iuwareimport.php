@@ -10,3 +10,4 @@ Author URI: http://www.flowcom.se/
 
 
 
+include_once 'includes/tools.php';
