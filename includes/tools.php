@@ -14,9 +14,7 @@ class Mentor_iuWare_Import_Tools{
 
         add_filter( 'cron_schedules', array(&$this, 'addCronMinutes' ) );
 
-        if ( !wp_next_scheduled( 'cron_iuware_import' ) ) {
-            wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
-        }
+        add_action( 'wp', array( &$this, 'prefix_setup_schedule' ) );
 
     }
 
@@ -28,6 +26,12 @@ class Mentor_iuWare_Import_Tools{
         return $array;
     }
 
+    function prefix_setp_schedule(){
+        if ( !wp_next_scheduled( 'cron_iuware_import' ) ) {
+            wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
+        }
+    }
+
 	function admin_menu(){
 
 		add_management_page( 'iuWare Import', 'iuWare Import', 'administrator', 'mentor_iuware_import_tools', array( &$this, 'tools' ) );
@@ -36,25 +40,29 @@ class Mentor_iuWare_Import_Tools{
 
 	function tools(){
 
-        $saved = "";
-
-        if( isset( $_REQUEST['save'] ) && wp_verify_nonce( $_REQUEST['nonce'], 'iuware_settings' ) ){
-
-            update_option( 'iuware_running', isset($_REQUEST['running']) ? 1 : 0 );
-            update_option( 'iuware_ssoid', (int)$_REQUEST['ssoid'] );
-            update_option( 'iuware_update', isset($_REQUEST['update']) ? 1 : 0 );
-            update_option( 'iuware_batch', (int)$_REQUEST['batch'] );
-            $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".";
-
-            sleep(2);
-
-        }
-
         $iuware_running = (int)get_option( 'iuware_running' );
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
         $iuware_update = (int)get_option( 'iuware_update' );
         $iuware_latest = (int)get_option( 'iuware_latest' );
         $iuware_batch = (int)get_option( 'iuware_batch' );
+
+        $saved = "";
+
+        if( isset( $_REQUEST['save'] ) && wp_verify_nonce( $_REQUEST['nonce'], 'iuware_settings' ) ){
+
+            $iuware_running = isset($_REQUEST['running']) ? 1 : 0;
+            $iuware_ssoid = (int)$_REQUEST['ssoid'];
+            $iuware_update = isset($_REQUEST['update']) ? 1 : 0;
+            $iuware_batch = (int)$_REQUEST['batch'];
+
+            update_option( 'iuware_running', $iuware_running );
+            update_option( 'iuware_ssoid', $iuware_ssoid );
+            update_option( 'iuware_update', $iuware_update );
+            update_option( 'iuware_batch', $iuware_batch );
+            $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".<br/>" . print_r($_REQUEST,true);
+
+        }
+
 
         if( !$iuware_batch ) $iuware_batch = 50;
 
@@ -75,7 +83,7 @@ class Mentor_iuWare_Import_Tools{
 
             ?>
 
-            <form method="post">
+            <form method="get">
 
                 <table class="widefat" cellspacing="0">
                     <thead>
@@ -145,6 +153,7 @@ class Mentor_iuWare_Import_Tools{
 
                 <input type="submit" name="save" value="Spara" class="button-primary" />
                 <input type="hidden" name="nonce" value="<?php echo wp_create_nonce( 'iuware_settings' ); ?>" />
+                <input type="hidden" name="page" value="mentor_iuware_import_tools" />
 
             </form>
 
