@@ -44,6 +44,7 @@ class Mentor_iuWare_Import_Tools{
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
         $iuware_update = (int)get_option( 'iuware_update' );
         $iuware_latest = (int)get_option( 'iuware_latest' );
+        $iuware_finished = get_option( 'iuware_finished' );
         $iuware_batch = (int)get_option( 'iuware_batch' );
 
         $saved = "";
@@ -53,12 +54,10 @@ class Mentor_iuWare_Import_Tools{
             $iuware_running = isset($_REQUEST['running']) ? 1 : 0;
             $iuware_ssoid = (int)$_REQUEST['ssoid'];
             $iuware_update = isset($_REQUEST['update']) ? 1 : 0;
-            $iuware_batch = (int)$_REQUEST['batch'];
 
             update_option( 'iuware_running', $iuware_running );
             update_option( 'iuware_ssoid', $iuware_ssoid );
             update_option( 'iuware_update', $iuware_update );
-            update_option( 'iuware_batch', $iuware_batch );
             $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".<br/>" . print_r($_REQUEST,true);
 
         }
@@ -124,19 +123,28 @@ class Mentor_iuWare_Import_Tools{
                     <tr>
                         <td>Batch om n poster</td>
                         <td>
-                            <input name="batch" type="text" value="<?php echo $iuware_batch; ?>" />
+                            <span><?php echo $iuware_batch; ?> stycken</span>
                         </td>
                         <td>
-                            (Antal poster varje körning)
+                            Hur många poster som importerades i en körning. Antalet justeras så att det är närmast anpassat till en minut.
                         </td>
                     </tr>
                     <tr>
-                        <td>Senaste körning</td>
+                        <td>Senast körd</td>
                         <td>
-                            <span><?php echo $iuware_latest; ?></span>
+                            <span><?php echo $iuware_finished; ?></span>
                         </td>
                         <td>
-                            Sekunder
+                            När i tiden senaste importen kördes.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Senast tidsåtgång</td>
+                        <td>
+                            <span><?php echo $iuware_latest; ?> sekunder</span>
+                        </td>
+                        <td>
+                            Hur lång tid det tog senaste gången importen kördes.
                         </td>
                     </tr>
                     </tbody>
@@ -409,6 +417,8 @@ class Mentor_iuWare_Import_Tools{
             $iuware_batch--;
         }
         update_option( 'iuware_batch', $iuware_batch );
+
+        update_option( 'iuware_finished', date( 'Y-m-d H:i:s' ) );
 
         update_option( 'iuware_running', 0 );
 
