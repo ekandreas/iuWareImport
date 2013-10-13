@@ -43,6 +43,7 @@ class Mentor_iuWare_Import_Tools{
             update_option( 'iuware_running', isset($_REQUEST['running']) ? 1 : 0 );
             update_option( 'iuware_ssoid', (int)$_REQUEST['ssoid'] );
             update_option( 'iuware_update', isset($_REQUEST['update']) ? 1 : 0 );
+            update_option( 'iuware_batch', (int)$_REQUEST['batch'] );
             $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".";
 
         }
@@ -50,8 +51,12 @@ class Mentor_iuWare_Import_Tools{
         $iuware_running = (int)get_option( 'iuware_running' );
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
         $iuware_update = (int)get_option( 'iuware_update' );
+        $iuware_latest = (int)get_option( 'iuware_latest' );
+        $iuware_batch = (int)get_option( 'iuware_batch' );
 
-		?>
+        if( !$iuware_batch ) $iuware_batch = 50;
+
+        ?>
 
 		<div class="wrap">
 
@@ -106,6 +111,24 @@ class Mentor_iuWare_Import_Tools{
                             (Om importen ska skriva över befintlig importerad post)
                         </td>
                     </tr>
+                    <tr>
+                        <td>Batch om n poster</td>
+                        <td>
+                            <input name="batch" type="text" value="<?php echo $iuware_batch; ?>" />
+                        </td>
+                        <td>
+                            (Antal poster varje körning)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Senaste körning</td>
+                        <td>
+                            <span><?php echo $iuware_latest; ?></span>
+                        </td>
+                        <td>
+                            Sekunder
+                        </td>
+                    </tr>
                     </tbody>
                     <tfoot>
                     <tr>
@@ -133,13 +156,21 @@ class Mentor_iuWare_Import_Tools{
 
 	}
 
+    function microtime_float(){
+        list($usec, $sec) = explode(" ", microtime());
+        return ((float)$usec + (float)$sec);
+    }
+
 	function iuware_import(){
 
         $iuware_running = (int)get_option( 'iuware_running' );
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
         $iuware_update = (int)get_option( 'iuware_update' );
+        $iuware_batch = (int)get_option( 'iuware_batch' );
 
         if( $iuware_running ) return;
+
+        if( !$iuware_batch ) $iuware_batch = 50;
 
         update_option( 'iuware_running', 1 );
 
@@ -154,9 +185,11 @@ class Mentor_iuWare_Import_Tools{
             $term_iuWare = $term_iuWare['term_id'];
         }
 
-        $step = 100;
+        $step = $iuware_batch;
         $pageid = 3868;
         $url = "http://www.plastnet.se/iuware.aspx";
+
+        $time_start = $this->microtime_float();
 
         for( $ssoid = $iuware_ssoid; $ssoid<$iuware_ssoid+$step; $ssoid++ ){
 
@@ -289,6 +322,10 @@ class Mentor_iuWare_Import_Tools{
             else{
                 update_option( 'iuware_ssoid', $ssoid );
             }
+
+            $time_end = $this->microtime_float();
+            $time = $time_end - $time_start;
+            update_option( 'iuware_latest', $time );
 
         }
 
