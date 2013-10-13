@@ -9,6 +9,7 @@ class Mentor_iuWare_Import_Tools{
 
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
         add_action( 'wp_ajax_nopriv_iuware_import', array( &$this, 'iuware_import' ) );
+        add_action( 'wp_ajax_iuware_import', array( &$this, 'iuware_import' ) );
         add_action( 'cron_iuware_import', array( &$this, 'iuware_import' ) );
 
         add_filter( 'cron_schedules', array(&$this, 'addCronMinutes' ) );
@@ -153,7 +154,7 @@ class Mentor_iuWare_Import_Tools{
             $term_iuWare = $term_iuWare['term_id'];
         }
 
-        $step = 50;
+        $step = 100;
         $pageid = 3868;
         $url = "http://www.plastnet.se/iuware.aspx";
 
@@ -245,6 +246,8 @@ class Mentor_iuWare_Import_Tools{
                             update_post_meta( $post_id, 'SSOID', $ssoid );
 
                             wp_set_post_terms( $post_id, array($term_iuWare, $term_paper), 'category' );
+                            //wp_set_post_terms( $post_id, "iuWare", 'post_tag', true );
+                            //wp_set_post_terms( $post_id, $ssoid, 'post_tag', true );
 
                             echo "<p>" . $ssoid . ". Updated, " . $headline . "</p>";
 
@@ -268,6 +271,8 @@ class Mentor_iuWare_Import_Tools{
                         update_post_meta( $post_id, 'SSOID', $ssoid );
 
                         wp_set_post_terms( $post_id, array($term_iuWare, $term_paper), 'category' );
+                        //wp_set_post_terms( $post_id, "iuWare", 'post_tag', true );
+                        //wp_set_post_terms( $post_id, $ssoid, 'post_tag', true );
 
                         echo "<p>" . $ssoid . ". Inserted, " . $headline . "</p>";
 
