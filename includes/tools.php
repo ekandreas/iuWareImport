@@ -43,7 +43,6 @@ class Mentor_iuWare_Import_Tools{
         $iuware_stopped = (int)get_option( 'iuware_stopped' );
         $iuware_running = get_option( 'iuware_running' );
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
-        $iuware_update = (int)get_option( 'iuware_update' );
         $iuware_latest = (int)get_option( 'iuware_latest' );
         $iuware_finished = get_option( 'iuware_finished' );
         $iuware_batch = (int)get_option( 'iuware_batch' );
@@ -54,13 +53,11 @@ class Mentor_iuWare_Import_Tools{
 
             $iuware_stopped = isset($_REQUEST['stopped']) ? 1 : 0;
             $iuware_ssoid = (int)$_REQUEST['ssoid'];
-            $iuware_update = isset($_REQUEST['update']) ? 1 : 0;
             $iuware_running = isset($_REQUEST['running']) ? '' : $iuware_running;
 
             update_option( 'iuware_running', $iuware_running );
             update_option( 'iuware_stopped', $iuware_stopped );
             update_option( 'iuware_ssoid', $iuware_ssoid );
-            update_option( 'iuware_update', $iuware_update );
             $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".<br/>" . print_r($_REQUEST,true);
 
         }
@@ -121,15 +118,6 @@ class Mentor_iuWare_Import_Tools{
                         </td>
                         <td>
                             (denna uppdateras efter hand och kan återställas)
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Uppdatera</td>
-                        <td>
-                            <input name="update" type="checkbox"<?php checked( 1, $iuware_update ); ?> />
-                        </td>
-                        <td>
-                            (Om importen ska skriva över befintlig importerad post)
                         </td>
                     </tr>
                     <tr>
@@ -197,7 +185,6 @@ class Mentor_iuWare_Import_Tools{
         $iuware_stopped = (int)get_option( 'iuware_stopped' );
         $iuware_running = get_option( 'iuware_running' );
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
-        $iuware_update = (int)get_option( 'iuware_update' );
         $iuware_batch = (int)get_option( 'iuware_batch' );
 
         if( $iuware_stopped ) return;
@@ -301,6 +288,8 @@ class Mentor_iuWare_Import_Tools{
                 }
                 else{
 
+                    $post_id = 0;
+
                     $post_is_saved = true;
 
                     $term_paper = term_exists( $paper, 'category', $term_iuWare );
@@ -323,82 +312,41 @@ class Mentor_iuWare_Import_Tools{
                     );
                     $posts = get_posts( $args );
 
+                    $post = array(
+                        'post_content'   => $body,
+                        'post_date'      => $date,
+                        'post_excerpt'   => $preamble,
+                        'post_status'    => 'publish',
+                        'post_title'     => $headline,
+                        'post_type'      => 'post',
+                        'post_author'	=> 1
+                    );
+
                     if( sizeof( $posts ) ){
-
-                        if( !$iuware_update ){
-                            echo "<p>" . $ssoid . ". No update allowed, " . $headline . "</p>";
-                        }
-                        else{
-                            $post = array(
-                                'ID' => $posts[0]->ID,
-                                'post_content'   => $body,
-                                'post_date'      => $date,
-                                'post_excerpt'   => $preamble,
-                                'post_status'    => 'publish',
-                                'post_title'     => $headline,
-                                'post_type'      => 'post',
-                                'post_author'	=> 1
-                            );
-
-                            $post_id = wp_update_post( $post );
-
-                            update_post_meta( $post_id, 'IUWARE_SOURCE', $paper );
-                            update_post_meta( $post_id, 'SSOID', $ssoid );
-
-                            wp_set_post_terms( $post_id, array($term_iuWare, $term_paper), 'category' );
-                            //wp_set_post_terms( $post_id, "iuWare", 'post_tag', true );
-                            //wp_set_post_terms( $post_id, $ssoid, 'post_tag', true );
-
-                            //images
-                            $thumb_set = false;
-                            if( sizeof( $images ) ){
-                                foreach( $images as $image ){
-                                    $attach_id = $this->upload_image( $image, $post_id );
-                                    if( !$thumb_set ){
-                                        set_post_thumbnail( $post_id, $attach_id );
-                                    }
-                                }
-                            }
-
-                            echo "<p>" . $ssoid . ". Updated, " . $headline . "</p>";
-
-                        }
+                        $post['ID'] = $posts[0]->ID;
+                        $post_id = wp_update_post( $post );
+                        echo "<p>" . $ssoid . ". Updated, " . $headline . "</p>";
 
                     }
                     else{
-
-                        $post = array(
-                            'post_content'   => $body,
-                            'post_date'      => $date,
-                            'post_excerpt'   => $preamble,
-                            'post_status'    => 'publish',
-                            'post_title'     => $headline,
-                            'post_type'      => 'post',
-                            'post_author'	=> 1
-                        );
-
                         $post_id = wp_insert_post( $post );
+                        echo "<p>" . $ssoid . ". Inserted, " . $headline . "</p>";
+                    }
 
-                        update_post_meta( $post_id, 'IUWARE_SOURCE', $paper );
-                        update_post_meta( $post_id, 'SSOID', $ssoid );
+                    update_post_meta( $post_id, 'IUWARE_SOURCE', $paper );
+                    update_post_meta( $post_id, 'SSOID', $ssoid );
 
-                        wp_set_post_terms( $post_id, array($term_iuWare, $term_paper), 'category' );
-                        //wp_set_post_terms( $post_id, "iuWare", 'post_tag', true );
-                        //wp_set_post_terms( $post_id, $ssoid, 'post_tag', true );
+                    wp_set_post_terms( $post_id, array($term_iuWare, $term_paper), 'category' );
 
-                        //images
-                        $thumb_set = false;
-                        if( sizeof( $images ) ){
-                            foreach( $images as $image ){
-                                $attach_id = $this->upload_image( $image, $post_id );
-                                if( !$thumb_set ){
-                                    set_post_thumbnail( $post_id, $attach_id );
-                                }
+                    //images
+                    $thumb_set = false;
+                    if( sizeof( $images ) ){
+                        foreach( $images as $image ){
+                            $attach_id = $this->upload_image( $image, $post_id );
+                            if( !$thumb_set ){
+                                set_post_thumbnail( $post_id, $attach_id );
                             }
                         }
-
-                        echo "<p>" . $ssoid . ". Inserted, " . $headline . "</p>";
-
                     }
 
                 }
@@ -406,10 +354,12 @@ class Mentor_iuWare_Import_Tools{
 
             if( !$post_is_saved ){
                 if( strtotime( $date ) < strtotime( '-1 week' ) ){
+                    $ssoid++;
                     update_option( 'iuware_ssoid', $ssoid );
                 }
             }
             else{
+                $ssoid++;
                 update_option( 'iuware_ssoid', $ssoid );
             }
 
