@@ -46,6 +46,8 @@ class Mentor_iuWare_Import_Tools{
             update_option( 'iuware_batch', (int)$_REQUEST['batch'] );
             $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".";
 
+            sleep(2);
+            
         }
 
         $iuware_running = (int)get_option( 'iuware_running' );
@@ -187,7 +189,7 @@ class Mentor_iuWare_Import_Tools{
 
         $step = $iuware_batch;
         $pageid = 3868;
-        $url = "http://www.plastnet.se/iuware.aspx";
+        $domain = "http://www.plastnet.se";
 
         $time_start = $this->microtime_float();
 
@@ -198,7 +200,7 @@ class Mentor_iuWare_Import_Tools{
             $date = "1999-01-01";
             $post_is_saved = false;
 
-            $the_body = wp_remote_retrieve_body( wp_remote_get( $url . "?pageid=" . $pageid . "&ssoid=" . $ssoid ) );
+            $the_body = wp_remote_retrieve_body( wp_remote_get( $domain . "/iuware.aspx?pageid=" . $pageid . "&ssoid=" . $ssoid ) );
 
             $matches = array();
             preg_match_all('/<div\s*class="container_centermain_article">(.*)<div>/s', $the_body, $matches);
@@ -206,6 +208,8 @@ class Mentor_iuWare_Import_Tools{
             if( isset( $matches[1][0] ) ){
 
                 $content = $matches[1][0];
+
+                $images = array();
 
                 preg_match_all('/<p\s*class="paper">\((.*)\)<\/p>/', $content, $matches);
                 $paper = isset($matches[1][0]) ? $this->decode( $matches[1][0] ) : '';
@@ -219,9 +223,41 @@ class Mentor_iuWare_Import_Tools{
 
                 preg_match_all('/<p\s*class="preamble">(.*)<\/p>/', $content, $matches);
                 $preamble = $this->decode( $matches[1][0] );
+                preg_match_all( '/src="([^"]*)"/', $body, $matches);
+                if ( isset( $matches ) )
+                {
+                    foreach ($matches as $match)
+                    {
+                        if(strpos($match[0], "src")!==false)
+                        {
+                            $res = explode("\"", $match[0]);
+                            $image = parse_url($res[1], PHP_URL_PATH);
+                            if( strpos( $image, 'iuware_files' ) ){
+                                $images[] = $domain . $image;
+                            }
+                        }
+                    }
+                }
+                $preamble = strip_tags( $preamble );
 
                 preg_match_all('/<p\s*class="body">(.*)<\/p>/', $content, $matches);
                 $body = $this->decode( $matches[1][0] );
+                preg_match_all( '/src="([^"]*)"/', $body, $matches);
+                if ( isset( $matches ) )
+                {
+                    foreach ($matches as $match)
+                    {
+                        if(strpos($match[0], "src")!==false)
+                        {
+                            $res = explode("\"", $match[0]);
+                            $image = parse_url($res[1], PHP_URL_PATH);
+                            if( strpos( $image, 'iuware_files' ) ){
+                                $images[] = $domain . $image;
+                            }
+                        }
+                    }
+                }
+                $body = strip_tags( $body );
 
                 if( $headline == $preamble && $preamble == $body ){
                     echo "<p>" . $ssoid . ". No article</p>";
@@ -266,7 +302,7 @@ class Mentor_iuWare_Import_Tools{
                                 'ID' => $posts[0]->ID,
                                 'post_content'   => $body,
                                 'post_date'      => $date,
-                                'post_excerpt'   => '',
+                                'post_excerpt'   => $preamble,
                                 'post_status'    => 'publish',
                                 'post_title'     => $headline,
                                 'post_type'      => 'post',
@@ -282,16 +318,28 @@ class Mentor_iuWare_Import_Tools{
                             //wp_set_post_terms( $post_id, "iuWare", 'post_tag', true );
                             //wp_set_post_terms( $post_id, $ssoid, 'post_tag', true );
 
+                            //images
+                            $thumb_set = false;
+                            if( sizeof( $images ) ){
+                                foreach( $images as $image ){
+                                    $attach_id = $this->upload_image( $image, $post_id );
+                                    if( !$thumb_set ){
+                                        set_post_thumbnail( $post_id, $attach_id );
+                                    }
+                                }
+                            }
+
                             echo "<p>" . $ssoid . ". Updated, " . $headline . "</p>";
 
                         }
 
                     }
                     else{
+
                         $post = array(
                             'post_content'   => $body,
                             'post_date'      => $date,
-                            'post_excerpt'   => '',
+                            'post_excerpt'   => $preamble,
                             'post_status'    => 'publish',
                             'post_title'     => $headline,
                             'post_type'      => 'post',
@@ -306,6 +354,17 @@ class Mentor_iuWare_Import_Tools{
                         wp_set_post_terms( $post_id, array($term_iuWare, $term_paper), 'category' );
                         //wp_set_post_terms( $post_id, "iuWare", 'post_tag', true );
                         //wp_set_post_terms( $post_id, $ssoid, 'post_tag', true );
+
+                        //images
+                        $thumb_set = false;
+                        if( sizeof( $images ) ){
+                            foreach( $images as $image ){
+                                $attach_id = $this->upload_image( $image, $post_id );
+                                if( !$thumb_set ){
+                                    set_post_thumbnail( $post_id, $attach_id );
+                                }
+                            }
+                        }
 
                         echo "<p>" . $ssoid . ". Inserted, " . $headline . "</p>";
 
@@ -334,6 +393,36 @@ class Mentor_iuWare_Import_Tools{
         wp_die( 'iuWare Import har kört klart.', 'iuWare Import' );
 
 	}
+
+    function upload_image( $url, $post_id ){
+
+        echo $url;
+
+        $upload_dir = wp_upload_dir();
+        $image_data = file_get_contents( $url );
+        $filename = basename( $url );
+        if(wp_mkdir_p($upload_dir['path']))
+            $file = $upload_dir['path'] . '/' . $filename;
+        else
+            $file = $upload_dir['basedir'] . '/' . $filename;
+        file_put_contents($file, $image_data);
+
+        $wp_filetype = wp_check_filetype( $filename, null );
+        $attachment = array(
+            'post_mime_type' => $wp_filetype['type'],
+            'post_title' => sanitize_file_name($filename),
+            'post_content' => '',
+            'post_status' => 'inherit'
+        );
+        $attach_id = wp_insert_attachment( $attachment, $file, $post_id );
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+        $attach_data = wp_generate_attachment_metadata( $attach_id, $file );
+        wp_update_attachment_metadata( $attach_id, $attach_data );
+
+        return $attach_id;
+
+    }
+
 
 	function decode( $input ){
 
