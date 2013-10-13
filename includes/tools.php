@@ -47,7 +47,7 @@ class Mentor_iuWare_Import_Tools{
             $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".";
 
             sleep(2);
-            
+
         }
 
         $iuware_running = (int)get_option( 'iuware_running' );
@@ -387,6 +387,19 @@ class Mentor_iuWare_Import_Tools{
             update_option( 'iuware_latest', $time );
 
         }
+
+        $time_end = $this->microtime_float();
+        $time = $time_end - $time_start;
+        $iuware_latest = (int)$time;
+        update_option( 'iuware_latest', $iuware_latest );
+
+        if( $iuware_latest < 59 ){
+            $iuware_batch++;
+        }
+        else{
+            $iuware_batch--;
+        }
+        update_option( 'iuware_batch', $iuware_batch );
 
         update_option( 'iuware_running', 0 );
 
