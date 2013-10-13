@@ -278,13 +278,13 @@ class Mentor_iuWare_Import_Tools{
                 $body = strip_tags( $body );
 
                 if( $headline == $preamble && $preamble == $body ){
-                    echo "<p>" . $ssoid . ". No article</p>";
+                    echo $ssoid . ". No article<br/>";
                 }
                 else if( $date < '1999-02-01' ){
-                    echo "<p>" . $ssoid . ". No date in article</p>";
+                    echo $ssoid . ". No date in article<br/>";
                 }
                 else if( empty( $headline ) ){
-                    echo "<p>" . $ssoid . ". No headline in article</p>";
+                    echo $ssoid . ". No headline in article<br/>";
                 }
                 else{
 
@@ -325,12 +325,12 @@ class Mentor_iuWare_Import_Tools{
                     if( sizeof( $posts ) ){
                         $post['ID'] = $posts[0]->ID;
                         $post_id = wp_update_post( $post );
-                        echo "<p>" . $ssoid . ". Updated, " . $headline . "</p>";
+                        echo $ssoid . ". Updated, " . $headline . "<br/>";
 
                     }
                     else{
                         $post_id = wp_insert_post( $post );
-                        echo "<p>" . $ssoid . ". Inserted, " . $headline . "</p>";
+                        echo $ssoid . ". Inserted, " . $headline . "<br/>";
                     }
 
                     update_post_meta( $post_id, 'IUWARE_SOURCE', $paper );
@@ -354,20 +354,12 @@ class Mentor_iuWare_Import_Tools{
 
             if( !$post_is_saved ){
                 if( strtotime( $date ) < strtotime( '-1 week' ) ){
-                    update_option( 'iuware_ssoid', $ssoid );
+                    //update_option( 'iuware_ssoid', $ssoid );
                 }
             }
-            else{
-                update_option( 'iuware_ssoid', $ssoid );
-            }
-
-            $time_end = $this->microtime_float();
-            $time = $time_end - $time_start;
-            update_option( 'iuware_latest', $time );
 
         }
 
-        $ssoid++;
         update_option( 'iuware_ssoid', $ssoid );
 
         $time_end = $this->microtime_float();
