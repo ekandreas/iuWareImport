@@ -8,9 +8,24 @@ class Mentor_iuWare_Import_Tools{
 	function __construct() {
 
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ) );
-		add_action( 'wp_ajax_iuware_import', array( &$this, 'iuware_import' ) );
+        add_action( 'wp_ajax_nopriv_iuware_import', array( &$this, 'iuware_import' ) );
+        add_action( 'cron_iuware_import', array( &$this, 'iuware_import' ) );
 
-	}
+        add_filter( 'cron_schedules', array(&$this, 'addCronMinutes' ) );
+
+        if ( !wp_next_scheduled( 'cron_iuware_import' ) ) {
+            wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
+        }
+
+    }
+
+    function addCronMinutes($array) {
+        $array['minute'] = array(
+            'interval' => 60,
+            'display' => 'Once a Minute',
+        );
+        return $array;
+    }
 
 	function admin_menu(){
 
