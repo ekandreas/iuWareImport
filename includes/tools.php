@@ -40,7 +40,8 @@ class Mentor_iuWare_Import_Tools{
 
 	function tools(){
 
-        $iuware_running = (int)get_option( 'iuware_running' );
+        $iuware_stopped = (int)get_option( 'iuware_stopped' );
+        $iuware_running = get_option( 'iuware_running' );
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
         $iuware_update = (int)get_option( 'iuware_update' );
         $iuware_latest = (int)get_option( 'iuware_latest' );
@@ -51,11 +52,13 @@ class Mentor_iuWare_Import_Tools{
 
         if( isset( $_REQUEST['save'] ) && wp_verify_nonce( $_REQUEST['nonce'], 'iuware_settings' ) ){
 
-            $iuware_running = isset($_REQUEST['running']) ? 1 : 0;
+            $iuware_stopped = isset($_REQUEST['stopped']) ? 1 : 0;
             $iuware_ssoid = (int)$_REQUEST['ssoid'];
             $iuware_update = isset($_REQUEST['update']) ? 1 : 0;
+            $iuware_running = isset($_REQUEST['running']) ? '' : $iuware_running;
 
             update_option( 'iuware_running', $iuware_running );
+            update_option( 'iuware_stopped', $iuware_stopped );
             update_option( 'iuware_ssoid', $iuware_ssoid );
             update_option( 'iuware_update', $iuware_update );
             $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".<br/>" . print_r($_REQUEST,true);
@@ -94,9 +97,18 @@ class Mentor_iuWare_Import_Tools{
                     </thead>
                     <tbody>
                     <tr>
+                        <td>Import stoppad</td>
+                        <td>
+                            <input name="stopped" type="checkbox"<?php checked( 1, $iuware_stopped ); ?> />
+                        </td>
+                        <td>
+                            Är denn ikryssad kommed ingen import att göras.
+                        </td>
+                    </tr>
+                    <tr>
                         <td>Körs redan?</td>
                         <td>
-                            <input name="running" type="checkbox"<?php checked( 1, $iuware_running ); ?> />
+                            <span><?php echo $iuware_running; ?></span> <input name="running" type="checkbox" /> Nollställ
                         </td>
                         <td>
                             (Om importen redan körs kommer den att stoppas om denna kryssas ur och sparas)
@@ -182,16 +194,18 @@ class Mentor_iuWare_Import_Tools{
 
 	function iuware_import(){
 
-        $iuware_running = (int)get_option( 'iuware_running' );
+        $iuware_stopped = (int)get_option( 'iuware_stopped' );
+        $iuware_running = get_option( 'iuware_running' );
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
         $iuware_update = (int)get_option( 'iuware_update' );
         $iuware_batch = (int)get_option( 'iuware_batch' );
 
-        if( $iuware_running ) return;
+        if( $iuware_stopped ) return;
+        if( !empty($iuware_running) ) return;
 
         if( !$iuware_batch ) $iuware_batch = 50;
 
-        update_option( 'iuware_running', 1 );
+        update_option( 'iuware_running', date( 'Y-m-d H:i:s' ) );
 
         // first create root term...
         $term_iuWare = term_exists('iuWare', 'category');
@@ -212,7 +226,7 @@ class Mentor_iuWare_Import_Tools{
 
         for( $ssoid = $iuware_ssoid; $ssoid<$iuware_ssoid+$step; $ssoid++ ){
 
-            if( !(int)get_option( 'iuware_running' ) ) break;
+            if( (int)get_option( 'iuware_stopped' ) ) break;
 
             $date = "1999-01-01";
             $post_is_saved = false;
@@ -420,7 +434,7 @@ class Mentor_iuWare_Import_Tools{
 
         update_option( 'iuware_finished', date( 'Y-m-d H:i:s' ) );
 
-        update_option( 'iuware_running', 0 );
+        update_option( 'iuware_running', '' );
 
         if ( !wp_next_scheduled( 'cron_iuware_import' ) ) {
             wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
