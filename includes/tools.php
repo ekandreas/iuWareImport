@@ -217,8 +217,6 @@ class Mentor_iuWare_Import_Tools{
 
         for( $ssoid = $iuware_ssoid; $ssoid<$iuware_ssoid+$step; $ssoid++ ){
 
-            if( (int)get_option( 'iuware_stopped' ) ) break;
-
             $date = "1999-01-01";
             $post_is_saved = false;
 
@@ -245,7 +243,7 @@ class Mentor_iuWare_Import_Tools{
 
                 preg_match_all('/<p\s*class="preamble">(.*)<\/p>/', $content, $matches);
                 $preamble = $this->decode( $matches[1][0] );
-                preg_match_all( '/src="([^"]*)"/', $body, $matches);
+                preg_match_all( '/src="([^"]*)"/', $preamble, $matches);
                 if ( isset( $matches ) )
                 {
                     foreach ($matches as $match)
