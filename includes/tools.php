@@ -250,8 +250,7 @@ class Mentor_iuWare_Import_Tools{
                     {
                         if(strpos($match[0], "src")!==false)
                         {
-                            $res = explode("\"", $match[0]);
-                            $image = $res[1];
+                            $image = $match[0];
                             if( strpos( $image, 'iuware_files' ) ){
                                 $images[] = $image;
                             }
@@ -269,8 +268,7 @@ class Mentor_iuWare_Import_Tools{
                     {
                         if(strpos($match[0], "src")!==false)
                         {
-                            $res = explode("\"", $match[0]);
-                            $image = $res[1];
+                            $image = $match[0];
                             if( strpos( $image, 'iuware_files' ) ){
                                 $images[] = $image;
                             }
