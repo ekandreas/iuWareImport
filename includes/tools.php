@@ -151,6 +151,15 @@ class Mentor_iuWare_Import_Tools{
                             Hur lång tid det tog senaste gången importen kördes.
                         </td>
                     </tr>
+                    <tr>
+                        <td>Nästa körning</td>
+                        <td>
+                            <span><?php echo date( 'Y-m-d H:i:s', wp_next_scheduled( 'cron_iuware_import' ) ); ?></span>
+                        </td>
+                        <td>
+                            Nästa planerade cronjobb.
+                        </td>
+                    </tr>
                     </tbody>
                     <tfoot>
                     <tr>
@@ -382,7 +391,7 @@ class Mentor_iuWare_Import_Tools{
         if ( !wp_next_scheduled( 'cron_iuware_import' ) ) {
             wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
         }
-        
+
         wp_die( 'iuWare Import har kört klart.', 'iuWare Import' );
 
 	}
