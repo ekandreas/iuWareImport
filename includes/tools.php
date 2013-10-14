@@ -251,9 +251,9 @@ class Mentor_iuWare_Import_Tools{
                         if(strpos($match[0], "src")!==false)
                         {
                             $res = explode("\"", $match[0]);
-                            $image = parse_url($res[1], PHP_URL_PATH);
+                            $image = $res[1];
                             if( strpos( $image, 'iuware_files' ) ){
-                                $images[] = $domain . $image;
+                                $images[] = $image;
                             }
                         }
                     }
@@ -270,9 +270,9 @@ class Mentor_iuWare_Import_Tools{
                         if(strpos($match[0], "src")!==false)
                         {
                             $res = explode("\"", $match[0]);
-                            $image = parse_url($res[1], PHP_URL_PATH);
+                            $image = $res[1];
                             if( strpos( $image, 'iuware_files' ) ){
-                                $images[] = $domain . $image;
+                                $images[] = $image;
                             }
                         }
                     }
