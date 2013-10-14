@@ -381,9 +381,7 @@ class Mentor_iuWare_Import_Tools{
 
         update_option( 'iuware_running', '' );
 
-        if ( !wp_next_scheduled( 'cron_iuware_import' ) ) {
-            wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
-        }
+        wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
 
         wp_die( 'iuWare Import har kört klart.', 'iuWare Import' );
 
