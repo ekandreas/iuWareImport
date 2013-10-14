@@ -111,7 +111,7 @@ class Mentor_iuWare_Import_Tools{
                     <tr>
                         <td>Körs redan?</td>
                         <td>
-                            <span><?php echo date_i18n( 'Y-m-d H:i:s', strtotime( $iuware_running ) ); ?></span> <input name="running" type="checkbox" /> Nollställ
+                            <span><?php echo empty( $iuware_running ) ? '' : date_i18n( 'Y-m-d H:i:s', strtotime( $iuware_running ) ); ?></span> <input name="running" type="checkbox" /> Nollställ
                         </td>
                         <td>
                             Gör omstart på jobb genom att kryssa i denna.
@@ -202,6 +202,8 @@ class Mentor_iuWare_Import_Tools{
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
         $iuware_batch = (int)get_option( 'iuware_batch' );
 
+        $term_index = array();
+
         if( $iuware_stopped ) return;
         if( !empty($iuware_running) ) return;
 
@@ -210,15 +212,20 @@ class Mentor_iuWare_Import_Tools{
         update_option( 'iuware_running', date( 'Y-m-d H:i:s' ) );
 
         // first create root term...
-        $term_iuWare = term_exists('iuWare', 'category');
-        $term_iuWare = $term_iuWare['term_id'];
-        if ( !$term_iuWare ) {
-            wp_insert_term(
-                'iuWare',
-                'category');
+        $term_iuWare = $term_index['iuWare'];
+        if( !$term_iuWare ){
             $term_iuWare = term_exists('iuWare', 'category');
             $term_iuWare = $term_iuWare['term_id'];
+            if ( !$term_iuWare ) {
+                wp_insert_term(
+                    'iuWare',
+                    'category');
+                $term_iuWare = term_exists('iuWare', 'category');
+                $term_iuWare = $term_iuWare['term_id'];
+            }
+            $term_index['iuWare'] = $term_iuWare;
         }
+
 
         $step = $iuware_batch;
         $pageid = 3868;
@@ -303,18 +310,25 @@ class Mentor_iuWare_Import_Tools{
 
                     $post_is_saved = true;
 
-                    $term_paper = term_exists( $paper, 'category', $term_iuWare );
-                    $term_paper = $term_paper['term_id'];
-                    if ( !$term_paper ) {
-                        wp_insert_term(
-                            $paper,
-                            'category',
-                            array(
-                                'parent' => $term_iuWare
-                            )
-                        );
-                        $term_paper = term_exists( $paper, 'category' );
+                    $term_paper = $term_index[$paper];
+
+                    if( !$term_paper ) {
+
+                        $term_paper = term_exists( $paper, 'category', $term_iuWare );
                         $term_paper = $term_paper['term_id'];
+                        if ( !$term_paper ) {
+                            wp_insert_term(
+                                $paper,
+                                'category',
+                                array(
+                                    'parent' => $term_iuWare
+                                )
+                            );
+                            $term_paper = term_exists( $paper, 'category' );
+                            $term_paper = $term_paper['term_id'];
+                        }
+                        $term_index[$paper] = $term_paper;
+
                     }
 
                     $args = array(
@@ -388,13 +402,13 @@ class Mentor_iuWare_Import_Tools{
 
         update_option( 'iuware_finished', date( 'Y-m-d H:i:s' ) );
 
-        update_option( 'iuware_running', '' );
+        delete_option( 'iuware_running', '' );
 
         if ( !wp_next_scheduled( 'cron_iuware_import' ) ) {
             wp_schedule_event( time(), 'minute', 'cron_iuware_import' );
         }
 
-        wp_die( 'iuWare Import har kört klart.', 'iuWare Import' );
+        exit;
 
 	}
 
