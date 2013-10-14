@@ -288,8 +288,6 @@ class Mentor_iuWare_Import_Tools{
                 }
                 else{
 
-                    error_log( print_r( $images, true ) );
-
                     $post_id = 0;
 
                     $post_is_saved = true;
