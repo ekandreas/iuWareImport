@@ -109,10 +109,10 @@ class Mentor_iuWare_Import_Tools{
                     <tr>
                         <td>Körs redan?</td>
                         <td>
-                            <span><?php echo $iuware_running; ?></span> <input name="running" type="checkbox" /> Nollställ
+                            <span><?php echo date_i18n( 'Y-m-d H:i:s', strtotime( $iuware_running ) ); ?></span> <input name="running" type="checkbox" /> Nollställ
                         </td>
                         <td>
-                            (Om importen redan körs kommer den att stoppas om denna kryssas ur och sparas)
+                            Gör omstart på jobb genom att kryssa i denna.
                         </td>
                     </tr>
                     <tr>
@@ -136,7 +136,7 @@ class Mentor_iuWare_Import_Tools{
                     <tr>
                         <td>Senast körd</td>
                         <td>
-                            <span><?php echo $iuware_finished; ?></span>
+                            <span><?php echo date_i18n( 'Y-m-d H:i:s', strtotime( $iuware_finished ) ); ?></span>
                         </td>
                         <td>
                             När i tiden senaste importen kördes.
@@ -154,7 +154,7 @@ class Mentor_iuWare_Import_Tools{
                     <tr>
                         <td>Nästa körning</td>
                         <td>
-                            <span><?php echo date( 'Y-m-d H:i:s', wp_next_scheduled( 'cron_iuware_import' ) ); ?></span>
+                            <span><?php echo date_i18n( 'Y-m-d H:i:s', strtotime( wp_next_scheduled( 'cron_iuware_import' ) ) ); ?></span>
                         </td>
                         <td>
                             Nästa planerade cronjobb.
