@@ -156,7 +156,7 @@ class Mentor_iuWare_Import_Tools{
                     <tr>
                         <td>Nästa körning</td>
                         <td>
-                            <span><?php echo date_i18n( 'Y-m-d H:i:s', strtotime( wp_next_scheduled( 'cron_iuware_import' ) ) ); ?></span>
+                            <span><?php $next = wp_next_scheduled( 'cron_iuware_import' ); echo $next ? '' : date_i18n( 'Y-m-d H:i:s', strtotime( $next  ) ); ?></span>
                         </td>
                         <td>
                             Nästa planerade cronjobb.
