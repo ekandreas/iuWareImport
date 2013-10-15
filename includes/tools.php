@@ -205,7 +205,13 @@ class Mentor_iuWare_Import_Tools{
         $term_index = array();
 
         if( $iuware_stopped ) return;
-        if( !empty($iuware_running) ) return;
+        if( !empty( $iuware_running ) ){
+            // check if this is a long time ago, then kick it again...
+            $running = strtotime( $iuware_running );
+            $diff = ( time() - $running ) / 60;
+            //echo "TIMEDIFF=" . $diff;
+            if( $diff < 5 ) return;
+        }
 
         if( !$iuware_batch ) $iuware_batch = 50;
 
@@ -382,10 +388,11 @@ class Mentor_iuWare_Import_Tools{
                     //update_option( 'iuware_ssoid', $ssoid );
                 }
             }
+            else{
+                update_option( 'iuware_ssoid', $ssoid );
+            }
 
         }
-
-        update_option( 'iuware_ssoid', $ssoid );
 
         $time_end = $this->microtime_float();
         $time = $time_end - $time_start;
@@ -401,6 +408,8 @@ class Mentor_iuWare_Import_Tools{
         update_option( 'iuware_batch', $iuware_batch );
 
         update_option( 'iuware_finished', date( 'Y-m-d H:i:s' ) );
+
+        update_option( 'iuware_ssoid', $ssoid );
 
         delete_option( 'iuware_running', '' );
 
