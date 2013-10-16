@@ -247,7 +247,7 @@ class Mentor_iuWare_Import_Tools{
             $the_body = wp_remote_retrieve_body( wp_remote_get( $domain . "/iuware.aspx?pageid=" . $pageid . "&ssoid=" . $ssoid ) );
 
             $matches = array();
-            preg_match_all('/<div\s*class="container_centermain_article">(.*)<div>/s', $the_body, $matches);
+            preg_match_all('/<div class=\"container_centermain_article\">(.*?)<div>/s', $the_body, $matches);
 
             if( isset( $matches[1][0] ) ){
 
@@ -255,49 +255,31 @@ class Mentor_iuWare_Import_Tools{
 
                 $images = array();
 
-                preg_match_all('/<p\s*class="paper">\((.*)\)<\/p>/', $content, $matches);
+                preg_match_all('/<p class=\"paper\">\((.*?)\)<\/p>/s', $content, $matches);
                 $paper = isset($matches[1][0]) ? $this->decode( $matches[1][0] ) : '';
 
-                preg_match_all('/<h1>(.*)<\/h1>/', $content, $matches);
+                preg_match_all('/<h1>(.*?)<\/h1>/s', $content, $matches);
                 $headline = $this->decode( $matches[1][0] );
 
-                preg_match_all('/<p\s*class="date">(.*)<\/p>/', $content, $matches);
+                preg_match_all('/<p class=\"date\">(.*?)<\/p>/s', $content, $matches);
                 $date = $this->decode( $matches[1][0] );
                 $date = date( 'Y-m-d', strtotime( $date ) );
 
-                preg_match_all('/<p\s*class="preamble">(.*)<\/p>/', $content, $matches);
+                preg_match_all('/<p class=\"preamble\">(.*?)<\/p>/s', $content, $matches);
                 $preamble = $this->decode( $matches[1][0] );
                 preg_match_all( '/src="([^"]*)"/', $preamble, $matches);
-                if ( isset( $matches ) )
+                if ( strpos( $matches[1][0], 'iuware_files' ) )
                 {
-                    foreach ($matches as $match)
-                    {
-                        if(strpos($match[0], "src")!==false)
-                        {
-                            $image = $match[0];
-                            if( strpos( $image, 'iuware_files' ) ){
-                                $images[] = $image;
-                            }
-                        }
-                    }
+                    $images[] = $domain . $matches[1][0];
                 }
                 $preamble = strip_tags( $preamble );
 
-                preg_match_all('/<p\s*class="body">(.*)<\/p>/', $content, $matches);
+                preg_match_all( '/<p class=\"body\">(.*?)<\/p>/s', $content, $matches);
                 $body = $this->decode( $matches[1][0] );
                 preg_match_all( '/src="([^"]*)"/', $body, $matches);
-                if ( isset( $matches ) )
+                if ( strpos( $matches[1][0], 'iuware_files' ) )
                 {
-                    foreach ($matches as $match)
-                    {
-                        if(strpos($match[0], "src")!==false)
-                        {
-                            $image = $match[0];
-                            if( strpos( $image, 'iuware_files' ) ){
-                                $images[] = $image;
-                            }
-                        }
-                    }
+                    $images[] = $domain . $matches[1][0];
                 }
                 $body = strip_tags( $body );
 
@@ -373,9 +355,11 @@ class Mentor_iuWare_Import_Tools{
                     $thumb_set = false;
                     if( sizeof( $images ) ){
                         foreach( $images as $image ){
-                            $attach_id = $this->upload_image( $image, $post_id );
-                            if( !$thumb_set ){
-                                set_post_thumbnail( $post_id, $attach_id );
+                            if( $this->url_exists( $image ) ){
+                                $attach_id = $this->upload_image( $image, $post_id );
+                                if( !$thumb_set ){
+                                    set_post_thumbnail( $post_id, $attach_id );
+                                }
                             }
                         }
                     }
@@ -421,9 +405,11 @@ class Mentor_iuWare_Import_Tools{
 
 	}
 
-    function upload_image( $url, $post_id ){
+    function url_exists($url) {
+        if(@file_get_contents($url,0,NULL,0,1)){return 1;}else{ return 0;}
+    }
 
-        echo $url;
+    function upload_image( $url, $post_id ){
 
         $upload_dir = wp_upload_dir();
         $image_data = file_get_contents( $url );
