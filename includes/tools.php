@@ -123,7 +123,7 @@ class Mentor_iuWare_Import_Tools{
                             <input name="ssoid" type="text" value="<?php echo $iuware_ssoid; ?>" />
                         </td>
                         <td>
-                            (denna uppdateras efter hand och kan återställas)
+                            Under pågående jobb uppdateras denna. För att återställa, se till att inget jobb körs först!
                         </td>
                     </tr>
                     <tr>
