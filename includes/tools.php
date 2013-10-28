@@ -52,6 +52,7 @@ class Mentor_iuWare_Import_Tools{
         $iuware_latest = (int)get_option( 'iuware_latest' );
         $iuware_finished = get_option( 'iuware_finished' );
         $iuware_batch = (int)get_option( 'iuware_batch' );
+				$iuware_paper = get_option( 'iuware_paper' );
 
         $saved = "";
 
@@ -60,10 +61,12 @@ class Mentor_iuWare_Import_Tools{
             $iuware_stopped = isset($_REQUEST['stopped']) ? 1 : 0;
             $iuware_ssoid = (int)$_REQUEST['ssoid'];
             $iuware_running = isset($_REQUEST['running']) ? '' : $iuware_running;
+						$iuware_paper = isset($_REQUEST['paper']) ? $_REQUEST['paper'] : '';
 
             update_option( 'iuware_running', $iuware_running );
             update_option( 'iuware_stopped', $iuware_stopped );
             update_option( 'iuware_ssoid', $iuware_ssoid );
+						update_option( 'iuware_paper', $iuware_paper );
             $saved = "Inställningarna är uppdaterade " . date( "Y-m-d H:i:s" ) . ".<br/>" . print_r($_REQUEST,true);
 
         }
@@ -126,6 +129,15 @@ class Mentor_iuWare_Import_Tools{
                             Under pågående jobb uppdateras denna. För att återställa, se till att inget jobb körs först!
                         </td>
                     </tr>
+										<tr>
+											<td>Tidningsfilter</td>
+											<td>
+												<input name="paper" type="text" value="<?php echo $iuware_paper; ?>" />
+											</td>
+											<td>
+												Filtrera på tidningsnamn?
+											</td>
+										</tr>
                     <tr>
                         <td>Batch om n poster</td>
                         <td>
@@ -201,6 +213,7 @@ class Mentor_iuWare_Import_Tools{
         $iuware_running = get_option( 'iuware_running' );
         $iuware_ssoid = (int)get_option( 'iuware_ssoid' );
         $iuware_batch = (int)get_option( 'iuware_batch' );
+				$iuware_paper = get_option( 'iuware_paper' );
 
         $term_index = array();
 
@@ -258,6 +271,11 @@ class Mentor_iuWare_Import_Tools{
                 preg_match_all('/<p class=\"paper\">\((.*?)\)<\/p>/s', $content, $matches);
                 $paper = isset($matches[1][0]) ? $this->decode( $matches[1][0] ) : '';
 
+								if( !empty( $iuware_paper ) && $paper != $iuware_paper ) {
+									echo $ssoid . ". Not paper = $iuware_paper<br/>";
+									continue;
+								}
+
                 preg_match_all('/<h1>(.*?)<\/h1>/s', $content, $matches);
                 $headline = $this->decode( $matches[1][0] );
 
@@ -272,7 +290,7 @@ class Mentor_iuWare_Import_Tools{
                 {
                     $images[] = $domain . $matches[1][0];
                 }
-                $preamble = strip_tags( $preamble );
+                $preamble = strip_tags( $preamble, '<br><p><hr><i>' );
 
                 preg_match_all( '/<p class=\"body\">(.*?)<\/p>/s', $content, $matches);
                 $body = $this->decode( $matches[1][0] );
@@ -281,7 +299,7 @@ class Mentor_iuWare_Import_Tools{
                 {
                     $images[] = $domain . $matches[1][0];
                 }
-                $body = strip_tags( $body );
+                $body = strip_tags( $body, '<br><p><hr><i><img>' );
 
                 if( $headline == $preamble && $preamble == $body ){
                     echo $ssoid . ". No article<br/>";
